@@ -3,8 +3,9 @@ package main
 import (
 	"flag"
 
-	"github.com/just-arun/micro-api-gateway/boot"
+	"github.com/just-arun/micro-api-gateway/connections"
 	"github.com/just-arun/micro-api-gateway/model"
+	"github.com/just-arun/micro-api-gateway/server"
 	"github.com/just-arun/micro-api-gateway/util"
 )
 
@@ -20,8 +21,10 @@ func init() {
 }
 
 func main() {
+
 	env := &model.Env{}
 	util.GetEnv(".env."+appEnv, ".", &env)
-	boot.Pubsub(env.Nats.Token)
-	boot.Proxy(appPort)
+	connections.Pubsub(env.Nats.Token)
+
+	server.Proxy(appPort)
 }
