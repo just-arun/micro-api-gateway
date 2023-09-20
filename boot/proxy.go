@@ -1,7 +1,6 @@
-package main
+package boot
 
 import (
-	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -36,7 +35,6 @@ func Proxy(port string) {
 		}
 		defer resp.Body.Close()
 		body, err := io.ReadAll(resp.Body)
-		fmt.Println(string(body))
 		for name, values := range resp.Header {
 			for _, value := range values {
 				w.Header().Add(name, value)
