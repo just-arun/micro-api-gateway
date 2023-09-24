@@ -6,7 +6,7 @@ require (
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
-	github.com/just-arun/micro-session-proto v0.0.0-20230919201200-f2a7f1430496 // indirect
+	github.com/just-arun/micro-session-proto v1.0.14 // indirect
 	github.com/klauspost/compress v1.16.5 // indirect
 	github.com/labstack/echo/v4 v4.11.1 // indirect
 	github.com/labstack/gommon v0.4.0 // indirect

@@ -127,6 +127,10 @@ github.com/jstemmer/go-junit-report v0.0.0-20190106144839-af01ea7f8024/go.mod h1
 github.com/jstemmer/go-junit-report v0.9.1/go.mod h1:Brl9GWCQeLvo8nXZwPNNblvFj/XSXhF0NWZEnDohbsk=
 github.com/just-arun/micro-session-proto v0.0.0-20230919201200-f2a7f1430496 h1:EU6zaPQv3kQiMjQ+Fqsixlxjn4xYKTIWZ7TTF6NymIc=
 github.com/just-arun/micro-session-proto v0.0.0-20230919201200-f2a7f1430496/go.mod h1:wge73pY6dFqrwzks+e034ovFj3m7TTGvtefWQIYShaM=
+github.com/just-arun/micro-session-proto v0.0.0-20230922153844-6d5fa18502c6 h1:ZfuTv6wPLOih9TTg3mm4h8NZ+cUG7mUxBSpF9k621lE=
+github.com/just-arun/micro-session-proto v0.0.0-20230922153844-6d5fa18502c6/go.mod h1:wge73pY6dFqrwzks+e034ovFj3m7TTGvtefWQIYShaM=
+github.com/just-arun/micro-session-proto v1.0.14 h1:kKFfMedXWtv489a4V7r4aSHaWzZNJfr6+qUh0KNM/gg=
+github.com/just-arun/micro-session-proto v1.0.14/go.mod h1:wge73pY6dFqrwzks+e034ovFj3m7TTGvtefWQIYShaM=
 github.com/kisielk/gotool v1.0.0/go.mod h1:XhKaO+MFFWcvkIS/tQcRk01m1F5IRFswLeQ+oQHNcck=
 github.com/klauspost/compress v1.16.5 h1:IFV2oUNUzZaz+XyusxpLzpzS8Pt5rh0Z16For/djlyI=
 github.com/klauspost/compress v1.16.5/go.mod h1:ntbaceVETuRiXiv4DpjP66DpAtAGkEQskQzEyD//IeE=
