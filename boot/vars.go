@@ -1,15 +1,11 @@
 package boot
 
+import "github.com/just-arun/micro-api-gateway/model"
+
 type MapPathType struct {
 	Key   string
 	Value string
 	Auth  bool
 }
 
-var MapPath = []MapPathType{
-	{
-		Key:   "auth",
-		Value: "http://localhost:8090/api/v1",
-		Auth:  false,
-	},
-}
+var MapPath = []model.ServiceMap{}

@@ -9,6 +9,10 @@ type natsEnv struct {
 	Token string `mapstructure:"token"`
 }
 
+type Cors struct {
+	Origins []string `mapstructure:"origins"`
+}
+
 type Env struct {
 	Grpc grpc    `mapstructure:"grpc"`
 	Nats natsEnv `mapstructure:"nats"`

@@ -9,10 +9,11 @@ import (
 
 	"github.com/just-arun/micro-api-gateway/boot"
 	grpcservice "github.com/just-arun/micro-api-gateway/grpc-service"
+	"github.com/just-arun/micro-api-gateway/model"
 	pb "github.com/just-arun/micro-session-proto"
 )
 
-func getSortedData(r *http.Request) (data *boot.MapPathType, url string) {
+func getSortedData(r *http.Request) (data *model.ServiceMap, url string) {
 	path := strings.Split(r.URL.String(), "/")
 	mapKey := ""
 	mapValue := ""

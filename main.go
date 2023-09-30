@@ -4,8 +4,9 @@ import (
 	"flag"
 
 	"github.com/just-arun/micro-api-gateway/boot"
-	"github.com/just-arun/micro-api-gateway/connections"
+	grpcservice "github.com/just-arun/micro-api-gateway/grpc-service"
 	"github.com/just-arun/micro-api-gateway/model"
+	"github.com/just-arun/micro-api-gateway/pubsub"
 	"github.com/just-arun/micro-api-gateway/server"
 	"github.com/just-arun/micro-api-gateway/util"
 	pb "github.com/just-arun/micro-session-proto"
@@ -26,9 +27,13 @@ func main() {
 
 	env := &model.Env{}
 	util.GetEnv(".env."+appEnv, ".", &env)
-	connections.Pubsub(env.Nats.Token)
+	pubsub.Pubsub(env.Nats.Token)
 	conn := boot.NewGrpcConnection(env.Grpc.Host, env.Grpc.Port)
 	client := pb.NewSessionServiceClient(conn)
+	err := grpcservice.Sitemap().GetServiceMap(client)
+	if err != nil {
+		panic(err)
+	}
 	server.Proxy(appPort, client)
 
 }
