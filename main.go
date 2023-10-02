@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 
 	"github.com/just-arun/micro-api-gateway/boot"
 	grpcservice "github.com/just-arun/micro-api-gateway/grpc-service"
@@ -27,13 +28,20 @@ func main() {
 
 	env := &model.Env{}
 	util.GetEnv(".env."+appEnv, ".", &env)
-	pubsub.Pubsub(env.Nats.Token)
+	con := boot.NatsConnection(env.Nats.Token)
+	pubsub.Pubsub(con)
 	conn := boot.NewGrpcConnection(env.Grpc.Host, env.Grpc.Port)
 	client := pb.NewSessionServiceClient(conn)
 	err := grpcservice.Sitemap().GetServiceMap(client)
 	if err != nil {
-		panic(err)
+		fmt.Println(err)
+		fmt.Println("Trying backup")
+		err = util.ReadJson(".", "sitemap.json", &boot.MapPath)
+		if err != nil {
+			panic("no backup sitemap file found")
+		}
 	}
-	server.Proxy(appPort, client)
+
+	server.Proxy(appPort, client, env)
 
 }

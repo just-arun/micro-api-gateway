@@ -1,27 +1,23 @@
 package pubsub
 
 import (
-	"fmt"
-
 	"github.com/just-arun/micro-api-gateway/boot"
 	"github.com/just-arun/micro-api-gateway/model"
+	"github.com/just-arun/micro-api-gateway/util"
+	"github.com/nats-io/nats.go"
 )
 
-func Pubsub(token string) {
-	con := boot.NatsConnection(token)
+type pubsub struct {
+	*nats.EncodedConn
+}
 
-	con.Subscribe("change-service-map", func(m *[]model.ServiceMap) {
-		fmt.Println(m)
+func Pubsub(con *nats.EncodedConn) {
+	ps := &pubsub{con}
+	ps.Subscribe("change-service-map", func(m *[]model.ServiceMap) {
+		if len(*m) < 1 {
+			util.ReadJson(".", "sitemap.json", &boot.MapPath)
+			return
+		}
 		boot.MapPath = *m
-		// va := []model.ServiceMap{}
-		// fmt.Println(string(m.Data))
-		// err := json.Unmarshal(m.Data, &va)
-		// if err != nil {
-		// 	fmt.Println("ERR: ", err)
-		// 	return
-		// }
-		// boot.MapPath = va
-		// fmt.Println(boot.MapPath)
-		// m.Respond([]byte("ok"))
 	})
 }

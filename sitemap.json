@@ -1,0 +1,8 @@
+[
+  {
+    "id": 1,
+    "key": "default",
+    "value": "http://localhost:8090/api/v1",
+    "auth": false
+  }
+]

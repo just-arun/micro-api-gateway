@@ -13,10 +13,22 @@ import (
 	pb "github.com/just-arun/micro-session-proto"
 )
 
+func cors(r *http.Request, w http.ResponseWriter, env *model.Env) {
+	allowedHeaders := "Accept, Content-Type, Content-Length, Accept-Encoding, Authorization,X-CSRF-Token"
+	// util.Array().Includes(env.Cors.Origins, func(item string, index int) bool {return item == })
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
+	w.Header().Set("Access-Control-Allow-Credentials", "true")
+	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+	w.Header().Set("Access-Control-Allow-Headers", allowedHeaders)
+	w.Header().Set("Access-Control-Expose-Headers", "Authorization")
+}
+
 func getSortedData(r *http.Request) (data *model.ServiceMap, url string) {
 	path := strings.Split(r.URL.String(), "/")
 	mapKey := ""
 	mapValue := ""
+	fmt.Println(boot.MapPath)
 	for _, v := range boot.MapPath {
 		if v.Key == path[1] {
 			mapKey = v.Key
@@ -65,10 +77,11 @@ func authVerify(r *http.Request, conn pb.SessionServiceClient, req *http.Request
 	return nil
 }
 
-func Proxy(port string, conn pb.SessionServiceClient) {
+func Proxy(port string, conn pb.SessionServiceClient, env *model.Env) {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		cors(r, w, env)
 		urlData, urlValue := getSortedData(r)
-
+		fmt.Println(urlValue)
 		client := &http.Client{}
 		req, err := http.NewRequest(r.Method, urlValue, r.Body)
 		if err != nil {
