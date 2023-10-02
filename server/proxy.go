@@ -10,14 +10,16 @@ import (
 	"github.com/just-arun/micro-api-gateway/boot"
 	grpcservice "github.com/just-arun/micro-api-gateway/grpc-service"
 	"github.com/just-arun/micro-api-gateway/model"
+	"github.com/just-arun/micro-api-gateway/util"
 	pb "github.com/just-arun/micro-session-proto"
 )
 
 func cors(r *http.Request, w http.ResponseWriter, env *model.Env) {
 	allowedHeaders := "Accept, Content-Type, Content-Length, Accept-Encoding, Authorization,X-CSRF-Token"
-	// util.Array().Includes(env.Cors.Origins, func(item string, index int) bool {return item == })
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
+	includes := util.Array().Includes(env.Cors.Origins, func(item string, index int) bool { return item == r.Header.Get("Origin") })
+	if includes {
+		w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
+	}
 	w.Header().Set("Access-Control-Allow-Credentials", "true")
 	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
 	w.Header().Set("Access-Control-Allow-Headers", allowedHeaders)
