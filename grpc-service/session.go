@@ -25,5 +25,20 @@ func (st session) VerifySession(client pb.SessionServiceClient, accessToken stri
 	return result, nil
 }
 
+func (st session) GetUserSessionRefreshToken(client pb.SessionServiceClient, refreshToken string) (*pb.SetUserSessionResponse, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+
+	result, err := client.GetUserSessionRefreshToken(ctx, &pb.GetUserSessionRefreshTokenPayload{
+		RefreshToken: refreshToken,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
 
 

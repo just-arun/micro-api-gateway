@@ -15,7 +15,7 @@ import (
 )
 
 func cors(r *http.Request, w http.ResponseWriter, env *model.Env) {
-	allowedHeaders := "Accept, Content-Type, Content-Length, Accept-Encoding, Authorization,X-CSRF-Token"
+	allowedHeaders := "Accept, Content-Type, Content-Length, Accept-Encoding, Authorization,X-CSRF-Token, x-refresh"
 	includes := util.Array().Includes(env.Cors.Origins, func(item string, index int) bool { return item == r.Header.Get("Origin") })
 	if includes {
 		w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
@@ -59,12 +59,46 @@ func copyResponseHeader(w http.ResponseWriter, resp *http.Response) {
 	}
 }
 
-func authVerify(r *http.Request, conn pb.SessionServiceClient, req *http.Request) error {
-	accessToken, err := r.Cookie("x-access")
-	if err != nil {
-		return err
+type foundHeaderTokenType int
+
+const (
+	foundHeaderTokenTypeAccessToken foundHeaderTokenType = iota
+	foundHeaderTokenTypeRefreshToken
+	foundHeaderTokenTypeNoneToken
+)
+
+func tokenFromHeader(r *http.Request) (access string, refresh string, tokenType foundHeaderTokenType, err error) {
+	tokenType = foundHeaderTokenTypeNoneToken
+	accessToken := r.Header.Get("Authorization")
+	if len(accessToken) == 0 {
+		refreshToken := r.Header.Get("x-refresh")
+		if len(refreshToken) != 0 {
+			return "", "", foundHeaderTokenTypeNoneToken, nil
+		}
+		return "", refreshToken, foundHeaderTokenTypeRefreshToken, nil
 	}
-	verifyAccess, err := grpcservice.Session().VerifySession(conn, accessToken.Value)
+	accessT := strings.Split(accessToken, " ")
+	if accessT[0] != "barear" {
+		return "", "", foundHeaderTokenTypeRefreshToken, fmt.Errorf("invalid authorization token")
+	}
+	return accessT[1], "", foundHeaderTokenTypeAccessToken, nil
+}
+
+func tokenFromCookie(r *http.Request) (access string, refresh string, tokenType foundHeaderTokenType) {
+	tokenType = foundHeaderTokenTypeNoneToken
+	accessToken, err := r.Cookie("x-session")
+	if err != nil {
+		refreshToken, err := r.Cookie("x-refresh")
+		if err != nil {
+			return "", "", foundHeaderTokenTypeNoneToken
+		}
+		return "", refreshToken.Value, foundHeaderTokenTypeRefreshToken
+	}
+	return accessToken.Value, "", foundHeaderTokenTypeAccessToken
+}
+
+func fetchAndSeedUserData(conn pb.SessionServiceClient, req *http.Request, accessToken string) (err error) {
+	verifyAccess, err := grpcservice.Session().VerifySession(conn, accessToken)
 	if err != nil {
 		return err
 	}
@@ -74,16 +108,59 @@ func authVerify(r *http.Request, conn pb.SessionServiceClient, req *http.Request
 	req.Header.Del("x-user-id")
 
 	req.Header.Add("x-roles", strings.Join(verifyAccess.Roles, ","))
-	req.Header.Add("x-token", accessToken.Value)
+	req.Header.Add("x-token", accessToken)
 	req.Header.Add("x-user-id", strconv.FormatInt(int64(verifyAccess.UserID), 10))
-	return nil
+	return
+}
+
+func fetchAndNewAccessToken(conn pb.SessionServiceClient, refreshToken string) (accessToken string, err error) {
+	response, err := grpcservice.Session().GetUserSessionRefreshToken(conn, refreshToken)
+
+	if err != nil {
+		return accessToken, err
+	}
+
+	return response.Token, nil
+}
+
+func authVerify(r *http.Request, conn pb.SessionServiceClient, req *http.Request) (err error) {
+	accessToken := ""
+	refreshToken := ""
+	tokenType := foundHeaderTokenTypeNoneToken
+
+	if boot.GeneralSettings.TokenPlacement == model.TokenPlacementHeader {
+		accessToken, refreshToken, tokenType, err = tokenFromHeader(r)
+		if err != nil {
+			return fmt.Errorf("invalid token {0}")
+		}
+	}
+
+	if boot.GeneralSettings.TokenPlacement == model.TokenPlacementCookie {
+		accessToken, refreshToken, tokenType = tokenFromCookie(r)
+	}
+
+	if tokenType == foundHeaderTokenTypeNoneToken {
+		return fmt.Errorf("no access token found")
+	}
+
+	switch tokenType {
+	case foundHeaderTokenTypeAccessToken:
+		return fetchAndSeedUserData(conn, req, accessToken)
+	case foundHeaderTokenTypeRefreshToken:
+		accessToken, err = fetchAndNewAccessToken(conn, refreshToken)
+		if err != nil {
+			return err
+		}
+		return fetchAndSeedUserData(conn, req, accessToken)
+	default:
+		return fmt.Errorf("invalid token {112}")
+	}
 }
 
 func Proxy(port string, conn pb.SessionServiceClient, env *model.Env) {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		cors(r, w, env)
 		urlData, urlValue := getSortedData(r)
-		fmt.Println(urlValue)
 		client := &http.Client{}
 		req, err := http.NewRequest(r.Method, urlValue, r.Body)
 		if err != nil {
@@ -99,7 +176,7 @@ func Proxy(port string, conn pb.SessionServiceClient, env *model.Env) {
 			err = authVerify(r, conn, req)
 			if err != nil {
 				w.WriteHeader(401)
-				w.Write([]byte("Unauthorized 401(0)"))
+				w.Write([]byte(`Unauthorized 401(0) ` + err.Error()))
 				return
 			}
 		}
@@ -107,7 +184,7 @@ func Proxy(port string, conn pb.SessionServiceClient, env *model.Env) {
 		containInMap := strings.Index(urlValue, "http")
 		if containInMap < 0 {
 			w.WriteHeader(404)
-			w.Write([]byte("404"))
+			w.Write([]byte("page not found"))
 			return
 		}
 

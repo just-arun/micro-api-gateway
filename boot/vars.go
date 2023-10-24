@@ -9,3 +9,7 @@ type MapPathType struct {
 }
 
 var MapPath = []model.ServiceMap{}
+
+var GeneralSettings = model.General{
+	TokenPlacement: model.TokenPlacementHeader,
+}
