@@ -30,7 +30,6 @@ func getSortedData(r *http.Request) (data *model.ServiceMap, url string) {
 	path := strings.Split(r.URL.String(), "/")
 	mapKey := ""
 	mapValue := ""
-	fmt.Println(boot.MapPath)
 	for _, v := range boot.MapPath {
 		if v.Key == path[1] {
 			mapKey = v.Key
@@ -100,6 +99,7 @@ func tokenFromCookie(r *http.Request) (access string, refresh string, tokenType 
 func fetchAndSeedUserData(conn pb.SessionServiceClient, req *http.Request, accessToken string) (err error) {
 	verifyAccess, err := grpcservice.Session().VerifySession(conn, accessToken)
 	if err != nil {
+		fmt.Println("DA", verifyAccess)
 		return err
 	}
 
@@ -123,10 +123,12 @@ func fetchAndNewAccessToken(conn pb.SessionServiceClient, refreshToken string) (
 	return response.Token, nil
 }
 
-func authVerify(r *http.Request, conn pb.SessionServiceClient, req *http.Request) (err error) {
+func authVerify(r *http.Request, conn pb.SessionServiceClient, req *http.Request, w http.ResponseWriter) (err error) {
 	accessToken := ""
 	refreshToken := ""
 	tokenType := foundHeaderTokenTypeNoneToken
+
+	fmt.Println("T Type", tokenType)
 
 	if boot.GeneralSettings.TokenPlacement == model.TokenPlacementHeader {
 		accessToken, refreshToken, tokenType, err = tokenFromHeader(r)
@@ -138,6 +140,8 @@ func authVerify(r *http.Request, conn pb.SessionServiceClient, req *http.Request
 	if boot.GeneralSettings.TokenPlacement == model.TokenPlacementCookie {
 		accessToken, refreshToken, tokenType = tokenFromCookie(r)
 	}
+	
+	fmt.Println("T Type", tokenType)
 
 	if tokenType == foundHeaderTokenTypeNoneToken {
 		return fmt.Errorf("no access token found")
@@ -145,11 +149,24 @@ func authVerify(r *http.Request, conn pb.SessionServiceClient, req *http.Request
 
 	switch tokenType {
 	case foundHeaderTokenTypeAccessToken:
+		fmt.Println("ca","da")
 		return fetchAndSeedUserData(conn, req, accessToken)
 	case foundHeaderTokenTypeRefreshToken:
+		fmt.Println("12")
 		accessToken, err = fetchAndNewAccessToken(conn, refreshToken)
 		if err != nil {
+		fmt.Println("EEx", err.Error())
 			return err
+		}
+		fmt.Println("1ac", accessToken)
+		if boot.GeneralSettings.TokenPlacement == model.TokenPlacementCookie {
+			http.SetCookie(w, &http.Cookie{
+				Name:   "x-session",
+				Value:  accessToken,
+				Path:   "/",
+				Secure: true,
+				MaxAge: int(boot.GeneralSettings.AccessTokenExpiryTime),
+			})
 		}
 		return fetchAndSeedUserData(conn, req, accessToken)
 	default:
@@ -171,10 +188,13 @@ func Proxy(port string, conn pb.SessionServiceClient, env *model.Env) {
 
 		copyRequestHeader(req, r)
 
+		fmt.Println(-1, "pre-auth", urlValue, urlData.Auth)
 		// auth verify
 		if urlData.Auth {
-			err = authVerify(r, conn, req)
+			fmt.Println(0)
+			err = authVerify(r, conn, req, w)
 			if err != nil {
+				fmt.Println(1)
 				w.WriteHeader(401)
 				w.Write([]byte(`Unauthorized 401(0) ` + err.Error()))
 				return

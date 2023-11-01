@@ -1,6 +1,8 @@
 package pubsub
 
 import (
+	"fmt"
+
 	"github.com/just-arun/micro-api-gateway/boot"
 	"github.com/just-arun/micro-api-gateway/model"
 	"github.com/just-arun/micro-api-gateway/util"
@@ -19,5 +21,8 @@ func Pubsub(con *nats.EncodedConn) {
 			return
 		}
 		boot.MapPath = *m
+		for _, v := range boot.MapPath {
+			fmt.Println(v)
+		}
 	})
 }

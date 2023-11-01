@@ -21,6 +21,7 @@ func (st sitemap) GetServiceMap(client pb.SessionServiceClient) (err error) {
 		fmt.Println("ERR: ", err.Error())
 		return
 	}
+	// boot.MapPath = []model.ServiceMap{}
 	for {
 		resp, err := stream.Recv()
 		if err != nil {
@@ -32,6 +33,7 @@ func (st sitemap) GetServiceMap(client pb.SessionServiceClient) (err error) {
 			Value: resp.Value,
 			Auth:  resp.Auth,
 		}
+		fmt.Println(*ca)
 		boot.MapPath = append(boot.MapPath, *ca)
 	}
 }
